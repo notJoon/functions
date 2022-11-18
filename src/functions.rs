@@ -10,28 +10,82 @@
 ///   - does not change the original array.
 /// 
 /// TODO:
-///  - should I take function parameter as a closure? 
+///  - should I initializing closure as a function parameter? 
 pub fn map<T, U>(arr: Vec<T>, callback: fn(&T) -> U) -> Vec<U>{
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(arr.len());
+    
     for (_, v) in arr.iter().enumerate() {
         result.push(callback(v));
     }
+
     result
 }
 
-pub fn reduce<T>() -> T {
-    unimplemented!("reduce")
+/// `Reduce`
+/// executes a user-supplied reducer callback function on each element of the array.
+/// In order, passing in the return value from the calculation on the preceding element.
+/// The final result of running the reducer across all elements of the array is a single value.
+/// 
+/// callback(fn)
+///  - callback function have following arguments.
+///   * acc: 
+///     accumulator. 
+///     The value resulting from the previous iteration. On first call,
+///     `init_value` if specified, otherwise `arr[0]`.
+/// 
+///   * current_value:
+///     The current element being processed in the array.
+///     On first call, the value of `arr[0]` if `init_value` was specified,
+///     otherwise `arr[1]`.
+/// 
+///   * init_value(optional):
+///     value to use as the first argument to the first call of the callback.
+///     if `init_value` is supplied, that also causes `current_value` to be
+///     initialized to the first value in the array.
+/// 
+///     Otherwise, `acc` is initialized to the first value in the array,
+///     and `current_value` is initialized to the second.
+/// 
+/// Return: 
+/// The value that results from running the reducer callback function
+/// to completion over the array.
+/// 
+/// Error:
+/// TypeError - if the given array contains no elements and no initialValue is provided.
+pub fn reduce(
+    arr: Vec<i32>, 
+    init_value: Option<i32>, 
+    callback: fn(acc: i32, cur_val: i32) -> i32
+) -> Option<i32> 
+{
+    if arr.is_empty() {
+        panic!("TypeError: empty array");
+    }
+
+    let mut acc = match init_value {
+        Some(v) => v,
+        None => arr[0],
+    };
+
+    let start = match init_value {
+        Some(_) => 0,
+        None => 1,
+    };
+
+    for i in start..arr.len() {
+        acc = callback(acc, arr[i]);
+    }
+    
+    Some(acc)
 }
 
-pub fn for_each<T>() -> T {
+pub fn for_each<T>() {
     unimplemented!("for_each")
 }
 
 #[cfg(test)]
-
-mod tests {
-
-    use super::*; 
+mod map_tests {
+    use super::map; 
 
     #[test]
     fn map_square() {
@@ -109,5 +163,62 @@ mod tests {
             result, 
             vec!["elppa", "taob", "tac", "ruasonid", "tnahpele"],
         );
+    }
+}
+
+#[cfg(test)]
+mod reduce_tests {
+    use super::reduce;
+
+    #[test]
+    #[should_panic(expected = "TypeError: empty array")]
+    fn reduce_must_panic() {
+        let arr = vec![];
+        let result = reduce(arr, None, |acc, x| acc + x);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn reduce_sum_without_init_value() {
+        let arr = vec![1, 2, 3, 4, 5];
+        let result = reduce(arr, None, |acc, x| acc + x);
+        assert_eq!(result, Some(15));
+    }
+
+    #[test]
+    fn reduce_sum_with_init_value() {
+        let arr = vec![1, 2, 3, 4, 5];
+        let result = reduce(arr, Some(10), |acc, x| acc + x);
+        assert_eq!(result, Some(25));
+    }
+
+    // #[test]
+    // fn reduce_sum_with_object_array() {
+    //     #[derive(Debug, PartialEq, Clone)]
+    //     struct TestArray {
+    //         key: i32,
+    //         value: i32,
+    //     }
+
+    //     let arr = vec![
+    //         TestArray { key: 1, value: 100 },
+    //         TestArray { key: 2, value: 200 },
+    //         TestArray { key: 3, value: 300 },
+    //         TestArray { key: 4, value: 450 },
+    //         TestArray { key: 5, value: 50000 },
+    //     ];
+
+    //     let result = reduce(arr, None, |acc, x| acc + x.value);
+    //     assert_eq!(result, Some(50850));
+    // }
+}
+
+#[cfg(test)]
+mod for_each_tests {
+    use super::for_each;
+
+    #[test]
+    fn for_each_test() {
+        unimplemented!("for_each_test")
     }
 }
