@@ -1,3 +1,44 @@
+//* Implementing Some most used functions in the functional programming style
+//* every functions are coded in a rust.
+//*
+//* All the functions are ordered in alphabetical order
+//* and take description from the rust "Iterator trait docs" and "mdn web docs" website and reference the test cases.
+//*
+//* [*] I'm not sure is it the right way to implement the functions but I think it's a good way to learn rust.
+//* so, this project is only for learning purpose not for make some useful library.
+
+
+/// `Filter`
+/// 
+/// The `filter` method is an iterative. it calls a provide callback function once for each element
+/// in an array, and constructs a new array of all the values for which callback returned `true` values.
+/// 
+/// Array element which do not pass the callback test are not included in the new array.
+/// 
+/// also, this method is generic. it only expects the value to have length property and integer-keyed properties.
+pub fn filter<T>(arr: Vec<T>, callback: fn(&T) -> bool) -> Vec<T> 
+where 
+    T: Copy
+{
+    let mut result = Vec::new();
+
+    for k in arr.iter() {
+        if callback(k) {
+            result.push(*k);
+        }
+    }
+
+    result
+}
+
+/// `For Each`
+/// this method executes a provided function once for each array element.
+/// 
+/// syntax: for_each(array, callback) -> undefined
+pub fn for_each<T, U>(arr: Vec<T>, callback: fn(&T) -> U) -> U {
+    unimplemented!("for_each")
+}
+
 /// `Map`
 /// A map represents a data structure in which collections of unique key
 /// and values are stored where each key is associated with one value.
@@ -79,33 +120,76 @@ pub fn reduce(
     Some(acc)
 }
 
-/// `Filter`
-/// 
-/// The `filter` method is an iterative. it calls a provide callback function once for each element
-/// in an array, and constructs a new array of all the values for which callback returned `true` values.
-/// 
-/// Array element which do not pass the callback test are not included in the new array.
-/// 
-/// also, this method is generic. it only expects the value to have length property and integer-keyed properties.
-pub fn filter<T>(arr: Vec<T>, callback: fn(&T) -> bool) -> Vec<T> 
-where 
-    T: Copy
-{
-    let mut result = Vec::new();
+// Tests
+// all tests are ordered in alphabetical order.
+// also tests are grouped by function name.
+// each test is named as `<function_name>_<test_name>`
+#[cfg(test)]
+mod filter_test {
+    use super::filter;
 
-    for k in arr.iter() {
-        if callback(k) {
-            result.push(*k);
-        }
+    #[test]
+    fn filter_is_big_enough() {
+        let arr = vec![1, 2, 3, 4, 5];
+        let result = filter(arr, |x| x > &3);
+        assert_eq!(result, vec![4, 5]);
     }
 
-    result
+    #[test]
+    fn find_all_prime_numbers() {
+        let arr = vec![
+            -3, -2, -1, 0, 
+            1, 2, 3, 4, 5, 
+            6, 7, 8, 9, 10
+        ];
+
+        let result = filter(arr, |num| {
+            if *num <= 1 {
+                return false;
+            }
+
+            for i in 2..*num {
+                if *num % i == 0 {
+                    return false;
+                }
+            }
+
+            true
+        });
+
+        assert_eq!(result, vec![2, 3, 5, 7]);
+    }
+
+    #[test]
+    fn filter_json() {
+        #[derive(Debug, PartialEq, Clone, Copy)]
+        struct JsonArray {
+            id: i32
+        }
+
+        let arr = vec![
+            JsonArray {id: 15},
+            JsonArray {id: -1},
+            JsonArray {id: 0},
+            JsonArray {id: 3},
+            JsonArray {id: 12.2 as i32},
+        ];
+
+        let result = filter(arr, |x| x.id > 0);
+        assert_eq!(result, vec![JsonArray {id: 15}, JsonArray {id: 3}, JsonArray {id: 12}]);
+    }
 }
 
-pub fn for_each<T>() {
-    unimplemented!("for_each")
-}
 
+#[cfg(test)]
+mod for_each_tests {
+    use super::for_each;
+
+    #[test]
+    fn for_each_test() {
+        unimplemented!("for_each_test")
+    }
+}
 #[cfg(test)]
 mod map_tests {
     use super::map; 
@@ -234,71 +318,4 @@ mod reduce_tests {
     //     let result = reduce(arr, None, |acc, x| acc + x.value);
     //     assert_eq!(result, Some(50850));
     // }
-}
-
-#[cfg(test)]
-mod filter_test {
-    use super::filter;
-
-    #[test]
-    fn filter_is_big_enough() {
-        let arr = vec![1, 2, 3, 4, 5];
-        let result = filter(arr, |x| x > &3);
-        assert_eq!(result, vec![4, 5]);
-    }
-
-    #[test]
-    fn find_all_prime_numbers() {
-        let arr = vec![
-            -3, -2, -1, 0, 
-            1, 2, 3, 4, 5, 
-            6, 7, 8, 9, 10
-        ];
-
-        let result = filter(arr, |num| {
-            if *num <= 1 {
-                return false;
-            }
-
-            for i in 2..*num {
-                if *num % i == 0 {
-                    return false;
-                }
-            }
-
-            true
-        });
-
-        assert_eq!(result, vec![2, 3, 5, 7]);
-    }
-
-    #[test]
-    fn filter_json() {
-        #[derive(Debug, PartialEq, Clone, Copy)]
-        struct JsonArray {
-            id: i32
-        }
-
-        let arr = vec![
-            JsonArray {id: 15},
-            JsonArray {id: -1},
-            JsonArray {id: 0},
-            JsonArray {id: 3},
-            JsonArray {id: 12.2 as i32},
-        ];
-
-        let result = filter(arr, |x| x.id > 0);
-        assert_eq!(result, vec![JsonArray {id: 15}, JsonArray {id: 3}, JsonArray {id: 12}]);
-    }
-}
-
-
-#[cfg(test)]
-mod for_each_tests {
-    use super::for_each;
-
-    #[test]
-    fn for_each_test() {
-        unimplemented!("for_each_test")
-    }
 }
