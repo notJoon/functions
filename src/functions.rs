@@ -3,9 +3,14 @@
 //*
 //* All the functions are ordered in alphabetical order
 //* and take description from the rust "Iterator trait docs" and "mdn web docs" website and reference the test cases.
-//*
+//* function argument must be named as "callback".
+//* 
 //* [*] I'm not sure is it the right way to implement the functions but I think it's a good way to learn rust.
 //* so, this project is only for learning purpose not for make some useful library.
+//TODO: 
+//   * change functions arguments to take a generic type
+//   * add more functions
+//   * change functions not take vectors as arguments, just be as an iterator-like to able method chaining.
 
 
 /// `Filter`
@@ -33,10 +38,72 @@ where
 
 /// `For Each`
 /// this method executes a provided function once for each array element.
+/// It calls `callback` function once for each element in an array in ascending-index order.
+/// 
+/// it looks similar like `map` but `filter_map` must returns undefined result and is not chainable.
+/// 
+/// `for_each` does not mutate the array on which it is called, but the function
+/// provided as `callback` can. the length of the array is saved before 
+/// the first invocation of `callback`
+/// - `callback` will not visit any elements added beyond the array's initial length
+/// - changes to already-visited indexed do not cause `callback` to be invoked on them again.
+/// - If an existing, yet-unvisited element of the array is changed by `callback`,
+/// Its value passes to the `callback` will be the value at the time that element 
+/// gets visited. `deleted` element are the visited.
+/// 
+/// `for_each` method is generic. it only expects the value to have a `length` property
+/// and integer-keyed properties.
+/// 
+/// expects a synchronous function - it does not wait for promises.
 /// 
 /// syntax: for_each(array, callback) -> undefined
-pub fn for_each<T, U>(arr: Vec<T>, callback: fn(&T) -> U) -> U {
-    unimplemented!("for_each")
+/// 
+/// ref: https://docs.rs/crate/foreach/latest/source/src/lib.rs
+use std::iter::Iterator;
+
+pub enum Next {
+    /// Default value, it does not change anything.
+    Continue,
+    /// If this, finishing iteration.
+    Break,
+}
+
+impl Default for Next {
+    fn default() -> Self {
+        Next::Continue
+    }
+}
+
+impl From<()> for Next {
+    fn from(_: ()) -> Self {
+        Next::Continue
+    }
+}
+
+pub trait ForEach: Iterator {
+    /// iterates over all items and executes given closure.
+    /// 
+    /// this allows to use iterator inside iteration loop,
+    /// which is illegal when using `for..in` loop.
+    fn for_each<N, F>(&mut self, callback: F)
+    where 
+        N: Into<Next>,
+        F: FnMut(Self::Item, &mut Self) -> N;
+}
+
+impl<T: Iterator> ForEach for T {
+    fn for_each<N, F>(&mut self, mut callback: F)
+    where 
+        N: Into<Next>,
+        F: FnMut(Self::Item, &mut Self) -> N
+    {
+        while let Some(item) = self.next() {
+            match callback(item, self).into() {
+                Next::Continue => continue,
+                Next::Break => break,
+            }
+        }
+    }
 }
 
 /// `Map`
@@ -67,26 +134,6 @@ pub fn map<T, U>(arr: Vec<T>, callback: fn(&T) -> U) -> Vec<U>{
 /// In order, passing in the return value from the calculation on the preceding element.
 /// The final result of running the reducer across all elements of the array is a single value.
 /// 
-/// callback(fn)
-///  - callback function have following arguments.
-///   * acc: 
-///     accumulator. 
-///     The value resulting from the previous iteration. On first call,
-///     `init_value` if specified, otherwise `arr[0]`.
-/// 
-///   * current_value:
-///     The current element being processed in the array.
-///     On first call, the value of `arr[0]` if `init_value` was specified,
-///     otherwise `arr[1]`.
-/// 
-///   * init_value(optional):
-///     value to use as the first argument to the first call of the callback.
-///     if `init_value` is supplied, that also causes `current_value` to be
-///     initialized to the first value in the array.
-/// 
-///     Otherwise, `acc` is initialized to the first value in the array,
-///     and `current_value` is initialized to the second.
-/// 
 /// Return: 
 /// The value that results from running the reducer callback function
 /// to completion over the array.
@@ -103,14 +150,9 @@ pub fn reduce(
         panic!("TypeError: empty array");
     }
 
-    let mut acc = match init_value {
-        Some(v) => v,
-        None => arr[0],
-    };
-
-    let start = match init_value {
-        Some(_) => 0,
-        None => 1,
+    let (mut acc, start) = match init_value {
+        Some(v) => (v, 0),
+        None => (arr[0], 1),
     };
 
     for i in start..arr.len() {
@@ -163,8 +205,8 @@ mod filter_test {
     #[test]
     fn filter_json() {
         #[derive(Debug, PartialEq, Clone, Copy)]
-        struct JsonArray {
-            id: i32
+        struct JsonArray<T> {
+            id: T
         }
 
         let arr = vec![
@@ -180,16 +222,36 @@ mod filter_test {
     }
 }
 
-
 #[cfg(test)]
 mod for_each_tests {
-    use super::for_each;
+    use super::ForEach;
 
     #[test]
     fn for_each_test() {
-        unimplemented!("for_each_test")
+        let iter = (0..10).into_iter();
+        let mut counter = 0;
+        iter.for_each(|x| {
+            println!("{}", x);
+            counter += 1;
+        });
+
+        assert_eq!(counter, 10);
+    }
+
+    #[test]
+    fn for_each_add() {
+        let ratings = [5, 4, 5].into_iter();
+        let mut total = 0;
+
+        let sum = |a: i32, b: i32| a + b;
+        ratings.for_each(|x| {
+            total = sum(total, x);
+        });
+
+        assert_eq!(total, 14);
     }
 }
+
 #[cfg(test)]
 mod map_tests {
     use super::map; 
