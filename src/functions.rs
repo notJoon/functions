@@ -1,17 +1,16 @@
-//* Implementing Some most used functions in the functional programming style
-//* every functions are coded in a rust.
-//*
-//* All the functions are ordered in alphabetical order
-//* and take description from the rust "Iterator trait docs" and "mdn web docs" website and reference the test cases.
-//* function argument must be named as "callback".
-//* 
-//* [*] I'm not sure is it the right way to implement the functions but I think it's a good way to learn rust.
-//* so, this project is only for learning purpose not for make some useful library.
-//TODO: 
+// * Implementing Some most used functions in the functional programming style
+// * every functions are coded in a rust.
+// *
+// * All the functions are ordered in alphabetical order
+// * and take description from the rust "Iterator trait docs" and "mdn web docs" website and reference the test cases.
+// * function argument must be named as "callback".
+// * 
+// * [*] I'm not sure is it the right way to implement the functions but I think it's a good way to learn rust.
+// * so, this project is only for learning purpose not for make some useful library.
+// TODO: 
 //   * change functions arguments to take a generic type
 //   * add more functions
 //   * change functions not take vectors as arguments, just be as an iterator-like to able method chaining.
-
 
 /// `Filter`
 /// 
@@ -166,6 +165,7 @@ pub fn reduce(
 // all tests are ordered in alphabetical order.
 // also tests are grouped by function name.
 // each test is named as `<function_name>_<test_name>`
+
 #[cfg(test)]
 mod filter_test {
     use super::filter;
@@ -290,6 +290,20 @@ mod map_tests {
         assert_eq!(
             result, 
             vec![(100, 1), (200, 2), (300, 3), (450, 4), (50000, 5)],
+        );
+
+        let arr = vec![
+            TestArray { key: 1, value: 100 },
+            TestArray { key: 2, value: 200 },
+            TestArray { key: 3, value: 300 },
+            TestArray { key: 4, value: 450 },
+            TestArray { key: 5, value: 50000 },
+        ];
+
+        let result = map(arr, |x| (x.key, x.value + 10));
+        assert_eq!(
+            result, 
+            vec![(1, 110), (2, 210), (3, 310), (4, 460), (5, 50010)],
         );
     }
 
