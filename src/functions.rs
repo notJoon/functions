@@ -10,7 +10,7 @@
 // TODO: 
 //   * change functions arguments to take a generic type
 //   * add more functions
-//   * change functions not take vectors as arguments, just be as an iterator-like to able method chaining.
+//   * method chaining 
 
 /// `Filter`
 /// 
@@ -58,6 +58,8 @@ where
 /// syntax: for_each(array, callback) -> undefined
 /// 
 /// ref: https://docs.rs/crate/foreach/latest/source/src/lib.rs
+/// 
+/// ! must change this implementation 
 use std::iter::Iterator;
 
 pub enum Next {
@@ -161,6 +163,14 @@ pub fn reduce(
     Some(acc)
 }
 
+pub fn flat<T, U>(arr: Vec<Vec<T>>, callback: fn(&T) -> U) -> Vec<T> {
+    unimplemented!()
+}
+
+pub fn flat_map<T, U>(arr: Vec<Vec<T>>, callback: fn(&T) -> U) -> Vec<T> {
+    unimplemented!()
+}
+
 // Tests
 // all tests are ordered in alphabetical order.
 // also tests are grouped by function name.
@@ -224,8 +234,6 @@ mod filter_test {
 
 #[cfg(test)]
 mod for_each_tests {
-    use super::ForEach;
-
     #[test]
     fn for_each_test() {
         let iter = (0..10).into_iter();
