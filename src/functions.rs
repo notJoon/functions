@@ -5,7 +5,7 @@
 // * and take description from the rust "Iterator trait docs" and "mdn web docs" website and reference the test cases.
 // * function argument must be named as "callback".
 // * 
-// * [*] I'm not sure is it the right way to implement the functions but I think it's a good way to learn rust.
+// * I'm not sure is it the right way to implement the functions but I think it's a good way to learn rust.
 // * so, this project is only for learning purpose not for make some useful library.
 // TODO: 
 //   * change functions arguments to take a generic type
@@ -18,25 +18,7 @@
 /// in an array, and constructs a new array of all the values for which callback returned `true` values.
 /// 
 /// Array element which do not pass the callback test are not included in the new array.
-/// 
-/// also, this method is generic. it only expects the value to have length property and integer-keyed properties.
-pub fn filter_v1<T>(arr: Vec<T>, callback: fn(&T) -> bool) -> Vec<T> 
-where 
-    T: Copy
-{
-    let mut result = Vec::new();
-
-    for k in arr.iter() {
-        if callback(k) {
-            result.push(*k);
-        }
-    }
-
-    result
-}
-
-/// just `filter` do same works
-pub fn filter_map<F, T, U>(arr: Vec<T>, callback: F) -> Vec<U> 
+pub fn filter<F, T, U>(arr: Vec<T>, callback: F) -> Vec<U> 
 where 
     F: Fn(T) -> Option<U>
 {
@@ -51,75 +33,38 @@ where
     result
 }
 
-/// `For Each`
-/// this method executes a provided function once for each array element.
-/// It calls `callback` function once for each element in an array in ascending-index order.
+/// basic `for_each` function which does not mutate or consume the values
+/// captured by the closure, this function is implemented by `Fn` trait.
+/// most restrictive function in `for_each` family.
 /// 
-/// it looks similar like `map` but `filter_map` must returns undefined result and is not chainable.
-/// 
-/// `for_each` does not mutate the array on which it is called, but the function
-/// provided as `callback` can. the length of the array is saved before 
-/// the first invocation of `callback`
-/// - `callback` will not visit any elements added beyond the array's initial length
-/// - changes to already-visited indexed do not cause `callback` to be invoked on them again.
-/// - If an existing, yet-unvisited element of the array is changed by `callback`,
-/// Its value passes to the `callback` will be the value at the time that element 
-/// gets visited. `deleted` element are the visited.
-/// 
-/// `for_each` method is generic. it only expects the value to have a `length` property
-/// and integer-keyed properties.
-/// 
-/// expects a synchronous function - it does not wait for promises.
-/// 
-/// syntax: for_each(array, callback) -> undefined
-/// 
-/// ref: https://docs.rs/crate/foreach/latest/source/src/lib.rs
-/// 
-/// ! must change this implementation 
-use std::iter::Iterator;
-
-pub enum Next {
-    /// Default value, it does not change anything.
-    Continue,
-    /// If this, finishing iteration.
-    Break,
-}
-
-impl Default for Next {
-    fn default() -> Self {
-        Next::Continue
+/// ```
+/// let arr = [1, 2, 3, 4, 5];
+/// for_each(&arr, |x| println!("{}", x));
+/// ```
+pub fn for_each<T, F>(arr: &Vec<T>, callback: F)
+where
+    F: Fn(&T),
+{
+    for e in arr {
+        callback(e);
     }
 }
 
-impl From<()> for Next {
-    fn from(_: ()) -> Self {
-        Next::Continue
-    }
-}
-
-pub trait ForEach: Iterator {
-    /// iterates over all items and executes given closure.
-    /// 
-    /// this allows to use iterator inside iteration loop,
-    /// which is illegal when using `for..in` loop.
-    fn for_each<N, F>(&mut self, callback: F)
-    where 
-        N: Into<Next>,
-        F: FnMut(Self::Item, &mut Self) -> N;
-}
-
-impl<T: Iterator> ForEach for T {
-    fn for_each<N, F>(&mut self, mut callback: F)
-    where 
-        N: Into<Next>,
-        F: FnMut(Self::Item, &mut Self) -> N
-    {
-        while let Some(item) = self.next() {
-            match callback(item, self).into() {
-                Next::Continue => continue,
-                Next::Break => break,
-            }
-        }
+/// `for_each` is implemented by `FnMut`
+/// that allows the closure to mutate the values it captures.
+/// 
+/// If want to modify the elements of the collection within the closure.
+/// 
+/// ```
+/// let arr = [1, 2, 3, 4, 5];
+/// for_each_mutable(&arr, |x| *x += 1);
+/// ```
+pub fn for_each_mutable<T, F>(arr: &Vec<T>, mut callback: F)
+where 
+    F: FnMut(&T)
+{
+    for e in arr {
+        callback(e);
     }
 }
 
@@ -136,6 +81,7 @@ impl<T: Iterator> ForEach for T {
 /// 
 /// TODO:
 ///  - should I initializing closure as a function parameter? 
+///  - move test suites to other file `test.rs`
 pub fn map<T, U>(arr: Vec<T>, callback: fn(&T) -> U) -> Vec<U>{
     let mut result = Vec::with_capacity(arr.len());
     
@@ -280,63 +226,12 @@ where
 
 #[cfg(test)]
 mod filter_test {
-    use super::{filter_v1, filter_map};
-
-    #[test]
-    fn filter_is_big_enough() {
-        let arr = vec![1, 2, 3, 4, 5];
-        let result = filter_v1(arr, |x| x > &3);
-        assert_eq!(result, vec![4, 5]);
-    }
-
-    #[test]
-    fn find_all_prime_numbers() {
-        let arr = vec![
-            -3, -2, -1, 0, 
-            1, 2, 3, 4, 5, 
-            6, 7, 8, 9, 10
-        ];
-
-        let result = filter_v1(arr, |num| {
-            if *num <= 1 {
-                return false;
-            }
-
-            for i in 2..*num {
-                if *num % i == 0 {
-                    return false;
-                }
-            }
-
-            true
-        });
-
-        assert_eq!(result, vec![2, 3, 5, 7]);
-    }
-
-    #[test]
-    fn filter_json() {
-        #[derive(Debug, PartialEq, Clone, Copy)]
-        struct JsonArray<T> {
-            id: T
-        }
-
-        let arr = vec![
-            JsonArray {id: 15},
-            JsonArray {id: -1},
-            JsonArray {id: 0},
-            JsonArray {id: 3},
-            JsonArray {id: 12.2 as i32},
-        ];
-
-        let result = filter_v1(arr, |x| x.id > 0);
-        assert_eq!(result, vec![JsonArray {id: 15}, JsonArray {id: 3}, JsonArray {id: 12}]);
-    }
+    use super::filter;
 
     #[test]
     fn test_filter_map() {
         let arr = vec![1, 2, 3, 4, 5];
-        let result = filter_map(arr, |x| {
+        let result = filter(arr, |x| {
             match x % 2 {
                 0 => Some(x * 2),
                 _ => None,
@@ -348,34 +243,25 @@ mod filter_test {
 }
 
 #[cfg(test)]
-mod for_each_tests {
-    //! this test will be remove 
-    #[test]
-    fn for_each_test() {
-        let iter = (0..10).into_iter();
-        let mut counter = 0;
-        iter.for_each(|x| {
-            // println!("{}", x);
-            counter += 1;
-        });
+mod for_each_family_test {
+    use super::{for_each, for_each_mutable};
 
-        assert_eq!(counter, 10);
+    #[test]
+    fn for_each_basic_test() {
+        let arr = vec![1, 2, 3, 4, 5];
+        for_each(&arr, |x| println!("{}", x));
     }
 
     #[test]
-    fn for_each_add() {
-        let ratings = [5, 4, 5].into_iter();
-        let mut total = 0;
+    fn for_each_mutable_integer_test() {
+        let mut result = Vec::new();
+        let arr = vec![1, 2, 3, 4, 5];
 
-        let sum = |a: i32, b: i32| a + b;
-        ratings.for_each(|x| {
-            total = sum(total, x);
-        });
+        for_each_mutable(&arr, |x| result.push(x * 2));
 
-        assert_eq!(total, 14);
+        assert_eq!(result, vec![2, 4, 6, 8, 10]);
     }
 }
-
 #[cfg(test)]
 mod map_tests {
     use super::map; 
