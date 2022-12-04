@@ -20,7 +20,7 @@
 /// Array element which do not pass the callback test are not included in the new array.
 /// 
 /// also, this method is generic. it only expects the value to have length property and integer-keyed properties.
-pub fn filter<T>(arr: Vec<T>, callback: fn(&T) -> bool) -> Vec<T> 
+pub fn filter_v1<T>(arr: Vec<T>, callback: fn(&T) -> bool) -> Vec<T> 
 where 
     T: Copy
 {
@@ -29,6 +29,22 @@ where
     for k in arr.iter() {
         if callback(k) {
             result.push(*k);
+        }
+    }
+
+    result
+}
+
+/// just `filter` do same works
+pub fn filter_map<F, T, U>(arr: Vec<T>, callback: F) -> Vec<U> 
+where 
+    F: Fn(T) -> Option<U>
+{
+    let mut result = Vec::new();
+
+    for e in arr {
+        if let Some(mapped) = callback(e) {
+            result.push(mapped);
         }
     }
 
@@ -130,45 +146,131 @@ pub fn map<T, U>(arr: Vec<T>, callback: fn(&T) -> U) -> Vec<U>{
     result
 }
 
-/// `Reduce`
-/// executes a user-supplied reducer callback function on each element of the array.
-/// In order, passing in the return value from the calculation on the preceding element.
-/// The final result of running the reducer across all elements of the array is a single value.
+/// allows to combine all the elements of a collection into a single value 
+/// by applying a binary operation to each element in turn.
 /// 
-/// Return: 
-/// The value that results from running the reducer callback function
-/// to completion over the array.
-/// 
-/// Error:
-/// TypeError - if the given array contains no elements and no initialValue is provided.
-pub fn reduce(
-    arr: Vec<i32>, 
-    init_value: Option<i32>, 
-    callback: fn(acc: i32, cur_val: i32) -> i32
-) -> Option<i32> 
+/// also, called `reduce` bur `fold` is meaning for the folding that the elements of the
+/// collection into a single value.
+fn fold<F, T, U>(arr: Vec<T>, init: U, callback: F) -> U 
+where 
+    F: Fn(U, T) -> U,
 {
-    if arr.is_empty() {
-        panic!("TypeError: empty array");
+    let mut result = init;
+
+    for e in arr {
+        result = callback(result, e);
     }
 
-    let (mut acc, start) = match init_value {
-        Some(v) => (v, 0),
-        None => (arr[0], 1),
-    };
+    result
+}
 
-    for i in start..arr.len() {
-        acc = callback(acc, arr[i]);
+/// create a new array with all sub-array elements concatenated
+/// into it recursively up to the specified depth.
+/// 
+/// for example, if you have an array with elements that are also arrays,
+/// `flat()` can be used to "flatten" the elements of the array into a single,
+///  one-dimensional array
+// TODO add depth 
+pub fn flat<T>(arr: Vec<Vec<T>>, depth: usize) -> Vec<T> {
+    // let mut result = Vec::new();
+
+    // for subvec in arr {
+    //     match depth {
+    //         0 => {
+    //             result.push(subvec);
+    //         },
+    //         _ => {
+    //             result.push(flat(subvec, depth - 1));
+    //         }
+    //     }
+    // }
+
+    // result
+    unimplemented!();
+}
+
+/// takes a function and an iterable as input and returns an iterator 
+/// that flattens the output of the function.
+/// 
+/// This means that if the function returns a `list`, the `flat_map` function
+/// will flatten that list into a single list of values.
+/// 
+/// this can be useful when you have a list of lists and you want to flatten it
+/// into a single list.
+/// 
+///  -- implementing example --
+/// 
+/// (1) with traits:
+/// ```
+/// use std::iter::{FlatMap, Map};
+/// 
+/// fn flat_map<F, T, U, I>(f: F, iter: T) -> FlatMap<Map<T, F>, U, I>
+/// where
+///     F: FnMut(U) -> I,
+///     T: IntoIterator<Item = U>,
+///     I: IntoIterator,
+/// {
+///     iter.into_iter()
+///         .map(f)
+///         .flat_map(|x| x)
+/// }
+/// 
+/// let list = vec![vec![1, 2, 3], vec![4, 5, 6]];
+/// let flat_list = flat_map(|x| x, list);
+/// 
+/// for item in flat_list {
+///     println!("{}", item);
+/// }
+/// ```
+/// 
+/// (2) without trait:
+/// ```
+/// fn flat_map<F, T, U, I>(f: F, iter: T) -> Vec<I::Item>
+/// where
+///     F: FnMut(U) -> I,
+///     T: IntoIterator<Item = U>,
+///     I: IntoIterator,
+/// {
+///     iter.into_iter()
+///         .map(f)
+///         .flat_map(|x| x)
+///         .collect::<Vec<I::Item>>()
+/// }
+/// ```
+/// 
+/// (3) without using any methods:
+/// ```
+/// fn flat_map<F, T, U, I>(f: F, iter: T) -> Vec<I::Item>
+/// where 
+///     F: FnMut(U) -> I,
+///     T: IntoIterator<Item = U>,
+///     I: IntoIterator,
+/// {
+///     let mut result = Vec::new();
+///     
+///     for item in iter {
+///         let iter = f(item)
+///         for sub in iter {
+///             result.push(subitem);
+///         }
+///     }
+///     result
+/// }
+/// ```
+pub fn flat_map<F, T, U>(arr: Vec<T>, callback: F) -> Vec<U> 
+where 
+    F: Fn(T) -> Vec<U>,
+{
+    let mut result = Vec::new();
+    for e in arr {
+        let mapped = callback(e);
+        // below code is same as 
+        // `result.extend(mapped);`
+        for sub in mapped {
+            result.push(sub);
+        }
     }
-    
-    Some(acc)
-}
-
-pub fn flat<T, U>(arr: Vec<Vec<T>>, callback: fn(&T) -> U) -> Vec<T> {
-    unimplemented!()
-}
-
-pub fn flat_map<T, U>(arr: Vec<Vec<T>>, callback: fn(&T) -> U) -> Vec<T> {
-    unimplemented!()
+    result
 }
 
 // Tests
@@ -178,12 +280,12 @@ pub fn flat_map<T, U>(arr: Vec<Vec<T>>, callback: fn(&T) -> U) -> Vec<T> {
 
 #[cfg(test)]
 mod filter_test {
-    use super::filter;
+    use super::{filter_v1, filter_map};
 
     #[test]
     fn filter_is_big_enough() {
         let arr = vec![1, 2, 3, 4, 5];
-        let result = filter(arr, |x| x > &3);
+        let result = filter_v1(arr, |x| x > &3);
         assert_eq!(result, vec![4, 5]);
     }
 
@@ -195,7 +297,7 @@ mod filter_test {
             6, 7, 8, 9, 10
         ];
 
-        let result = filter(arr, |num| {
+        let result = filter_v1(arr, |num| {
             if *num <= 1 {
                 return false;
             }
@@ -227,19 +329,33 @@ mod filter_test {
             JsonArray {id: 12.2 as i32},
         ];
 
-        let result = filter(arr, |x| x.id > 0);
+        let result = filter_v1(arr, |x| x.id > 0);
         assert_eq!(result, vec![JsonArray {id: 15}, JsonArray {id: 3}, JsonArray {id: 12}]);
+    }
+
+    #[test]
+    fn test_filter_map() {
+        let arr = vec![1, 2, 3, 4, 5];
+        let result = filter_map(arr, |x| {
+            match x % 2 {
+                0 => Some(x * 2),
+                _ => None,
+            }
+        });
+
+        assert_eq!(result, vec![4, 8]);
     }
 }
 
 #[cfg(test)]
 mod for_each_tests {
+    //! this test will be remove 
     #[test]
     fn for_each_test() {
         let iter = (0..10).into_iter();
         let mut counter = 0;
         iter.for_each(|x| {
-            println!("{}", x);
+            // println!("{}", x);
             counter += 1;
         });
 
@@ -358,48 +474,95 @@ mod map_tests {
 }
 
 #[cfg(test)]
-mod reduce_tests {
-    use super::reduce;
+mod fold_tests {
+    use super::fold;
 
     #[test]
-    #[should_panic(expected = "TypeError: empty array")]
-    fn reduce_must_panic() {
-        let arr = vec![];
-        let result = reduce(arr, None, |acc, x| acc + x);
-        assert_eq!(result, None);
+    fn basic_fold() {
+        let arr = vec![1, 2, 3];
+        let folded = fold(arr, 0, |acc, x| acc + x);
+        assert_eq!(folded, 6);
     }
 
     #[test]
-    fn reduce_sum_without_init_value() {
-        let arr = vec![1, 2, 3, 4, 5];
-        let result = reduce(arr, None, |acc, x| acc + x);
-        assert_eq!(result, Some(15));
+    fn fold_on_json_like_data_structure() {
+        #[derive(Debug, PartialEq)]
+        enum JsonValue {
+            Null, 
+            Boolean(bool),
+            Number(f64),
+            String(String),
+            Array(Vec<JsonValue>),
+            Object(Vec<(String, JsonValue)>),
+        }
+
+        let input = JsonValue::Array(vec![
+            JsonValue::Number(1.0),
+            JsonValue::Number(2.0),
+            JsonValue::Number(3.0),
+        ]);
+
+        let result = match input {
+            JsonValue::Array(elm) => {
+                fold(elm, 0.0, |acc, x| match x {
+                    JsonValue::Number(n) => acc + n,
+                    _ => acc,
+                })
+            },
+
+            JsonValue::Null => panic!("null"),
+            
+            _ => 0.0,
+        };
+
+        assert_eq!(result, 6.0);
+    }
+}
+
+// #[cfg(test)]
+// mod flat_tests {
+//     use super::flat;
+
+//     #[test]
+//     fn basic_flat_test() {
+//         let arr1: Vec<Vec<i32>> = vec![vec![1, 2], vec![3, 4]];
+//         let expected1 = vec![1, 2, 3, 4];
+
+//         assert_eq!(flat(arr1), expected1);
+
+//         let arr2: Vec<Vec<i32>> = vec![vec![1], vec![2, 3], vec![4, 5, 6]];
+//         let expected2 = vec![1, 2, 3, 4, 5, 6];
+
+//         assert_eq!(flat(arr2), expected2);
+//     }
+
+//     #[test]
+//     fn flat_empty_vec() {
+//         let arr: Vec<Vec<i32>> = vec![vec![], vec![], vec![]];
+//         let expected: Vec<i32> = vec![];
+
+//         assert_eq!(flat(arr), expected);
+//     }
+// }
+
+#[cfg(test)]
+mod flat_map_tests {
+    use super::flat_map;
+
+    #[test]
+    fn flat_map_basic() {
+        let arr = vec![1, 2, 3];
+        let fm = flat_map(arr, |x| vec![x, x*2, x*3]);
+        assert_eq!(fm, vec![1, 2, 3, 2, 4, 6, 3, 6, 9]);
     }
 
     #[test]
-    fn reduce_sum_with_init_value() {
-        let arr = vec![1, 2, 3, 4, 5];
-        let result = reduce(arr, Some(10), |acc, x| acc + x);
-        assert_eq!(result, Some(25));
+    fn flat_map_takes_string_vec() {
+        let arr = vec!["hello", "world"];
+        let result = flat_map(arr, |s| {
+            s.chars().collect::<Vec<char>>()
+        });
+        let expected = vec!['h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'];
+        assert_eq!(result, expected);
     }
-
-    // #[test]
-    // fn reduce_sum_with_object_array() {
-    //     #[derive(Debug, PartialEq, Clone)]
-    //     struct TestArray {
-    //         key: i32,
-    //         value: i32,
-    //     }
-
-    //     let arr = vec![
-    //         TestArray { key: 1, value: 100 },
-    //         TestArray { key: 2, value: 200 },
-    //         TestArray { key: 3, value: 300 },
-    //         TestArray { key: 4, value: 450 },
-    //         TestArray { key: 5, value: 50000 },
-    //     ];
-
-    //     let result = reduce(arr, None, |acc, x| acc + x.value);
-    //     assert_eq!(result, Some(50850));
-    // }
 }
