@@ -1,73 +1,9 @@
 # functions
 
-러스트로 고차 함수(Higher-order function, HOF)들을 구현해보는 프로젝트입니다. 실제로 작동하는 함수를 만드들지만 실제로 사용하는 라이브러리를 제작하는건 아니기 때문에 이 점을 유의해주세요.
+This is a project to implement higher-order functions (HOFs) in Rust. We will create functions that actually work, but we are not creating a library for practical use, so please keep this in mind.
 
-설명이나 테스트는 MDN과 러스트의 `Iterators`를 참조했습니다.
+Explanations and tests were based on MDN and Rust's Iterators.
 
-모든 함수를 제네릭(generic)을 받게끔 설계하는게 목표이며, 최대한 많은 함수를 구현해 보는것이 목표입니다.
+The goal is to design all functions to be generic, and the goal is to implement as many functions as possible.
 
-## 이름 규칙
-
-프로젝트에서 함수의 이름과 변수명, 테스트 코드의 스타일을 통일시키기 위해 다음과 같은 규칙을 정했습니다.
-
-### 변수명
-
-입력값으로 들어오는 `collection`은 `arr`로 함수는 `callback`으로 작성합니다.
-
-### 타입
-
-대부분의 경우 타입은 제네릭(generic)으로 표시합니다. 주로 `T`, `F`, `U`와 같은 문자를 사용하는데 각각의 문자는 다음과 같은 의미를 가집니다.
-
-* `T`: 또는 그 이외의 문자들: collection의 타입
-* `F`: callback의 타입
-* `U`: callback의 반환값의 타입
-
-다음과 같이 타입을 표시합니다.
-
-```rust
-fn foo<T, U, F>(arr: Vec<T>, callback: F) -> Vec<U>
-where
-    F: Fn(&T) -> U
-```
-
-### 함수명
-
-구현된 트레이트 별로 함수의 이름을 다르게 하기로 했습니다.
-예를 들어, 클로저를 받을 수 있는 `Fn`, `FnOnce`, `FnMut` 트레이트는 각각의 특성에 의거해 다음과 같이 이름이 정해집니다.
-
-* `Fn`: 단순한 동작을 하는 함수의 이름으로 쓰이고, 가장 기초적인 구현입니다. (ex. `for_each`)
-* `FnMut`: 함수_mutable (ex. `for_each_mutable`)
-* `FnOnce`: 함수_move (ex. `for_each_move`)
-
-왜냐하면 `Fn` 트레이트로 구현하면 클로저에 어떤 값이 들어와도 값을 변경하거나 소비하지 않는 가장 기본적인 동작만 합니다. 또한 `FnMut`을 이용한다면 클로저에 들어온 값을 변경할 수 있고, 마지막으로 `FnOnce`로 구현한다면 Collection 내의 요소들을 이동시킬 수 있기 때문에 다음과 같이 이름을 정했습니다.
-
-## 테스트 작성
-
-모든 테스트는 `cfg(test)`를 이용합니다. 각각의 함수별로 모듈을 만들어 작성하며 모듈의 이름은 `함수_tests`로 작성합니다. 예를 들어 `for_each` 함수의 테스트는 `for_each_tests` 모듈에 작성합니다. 그리고 테스트 함수의 이름은 `함수이름_기능`으로 작성해야합니다. 또한 함수를 불러올때 `use super::해당함수;`로 불러옵니다. 절대 와일드카드(`*`)를 사용하지 않습니다.
-
-다음은 테스트 작성 예시입니다.
-
-```rust
-#[cfg(test)]
-mod foo_tests {
-    use super::foo;
-
-    #[test]
-    fn foo_test_add_one() {
-        // ...
-    }
-
-    #[test]
-    fn foo_test_string_something() {
-        // ...
-    }
-}
-```
-
-또한 테스트는 함수 이름 순서대로 작성하는걸 권장합니다.
-
-## 주석
-
-함수 기능에 대한 설명을 작성할 때는 `///`를 이용합니다. 그 다음에 함수에 대한 설명을 간략하게 작성하고, 예제를 작성합니다. 이때는 `# Example`로 마킹하면 됩니다.
-
-그외 주석은 `//`를 이용하면 됩니다.
+For more information, please visit the project [wiki page](https://github.com/notJoon/functions/wiki)
