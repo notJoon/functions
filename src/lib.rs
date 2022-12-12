@@ -1,1 +1,2 @@
-pub mod functions;
+mod functions;
+mod test;
